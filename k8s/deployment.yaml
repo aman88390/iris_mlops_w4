@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: iris-api
-        image: ARTIFACT_IMAGE_URL   # replace after push
+        image: us-central1-docker.pkg.dev/sincere-mission-473205-i3/iris-api-repo/iris-api:latest   # replace after push
         ports:
         - containerPort: 8000
