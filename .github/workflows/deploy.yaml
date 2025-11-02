@@ -12,28 +12,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up gcloud
-      uses: google-github-actions/setup-gcloud@v2
+    # ✅ Authenticate using the JSON key secret
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v1
       with:
-        project_id: ${{ secrets.GCP_PROJECT }}
-        service_account_email: ${{ secrets.GCP_EMAIL }}
-        service_account_key: ${{ secrets.GCP_KEY }}
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-    - name: Authenticate Docker
+    - name: Set up gcloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    # ✅ Authenticate Docker to Artifact Registry
+    - name: Configure Docker auth
       run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
+    # ✅ Build Docker Image
     - name: Build Docker image
       run: |
         docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ secrets.ARTIFACT_REPO }}/iris-api:latest .
 
+    # ✅ Push Docker Image
     - name: Push Docker image
       run: |
         docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ secrets.ARTIFACT_REPO }}/iris-api:latest
 
+    # ✅ Connect to GKE
     - name: Connect to GKE
       run: |
-        gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER }} --zone ${{ secrets.GKE_ZONE }}
+        gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER }} --zone ${{ secrets.GKE_ZONE }} --project ${{ secrets.GCP_PROJECT }}
 
+    # ✅ Apply Kubernetes manifests
     - name: Deploy to GKE
       run: |
         kubectl apply -f k8s/deployment.yaml
